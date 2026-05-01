@@ -92,7 +92,7 @@ piedrazul-citas-app/
 
 ---
 
-# 🚀 Ejecución rápida (Modo Demo)
+# 🚀 Ejecución rápida
 
 ---
 
@@ -115,24 +115,25 @@ docker compose up -d postgres
 
 ## 3. Ejecutar Backend
 
-1. Abre:
+1. Ve a la carpeta del API:
 
 ```
-backend/Piedrazul.sln
+cd backend/src/Piedrazul.Api
 ```
 
-2. Configura:
+2. Restaurar dependencias:
 
-```json
-"Authentication": {
-  "Mode": "Development"
-}
+```
+dotnet restore
 ```
 
-3. Ejecuta el proyecto
+3. Ejecutar:
 
 API:
-
+```
+dotnet run
+```
+Localhost:
 ```
 http://localhost:5184
 ```
