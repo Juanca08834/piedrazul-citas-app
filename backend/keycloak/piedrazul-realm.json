@@ -1,0 +1,79 @@
+{
+  "realm": "piedrazul",
+  "enabled": true,
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "roles": {
+    "realm": [
+      { "name": "Admin", "description": "Administrador del sistema" },
+      { "name": "Scheduler", "description": "Agendador de citas" },
+      { "name": "Doctor", "description": "Médico o terapista" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "piedrazul-web",
+      "name": "Piedrazul Web",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles",
+        "web-origins"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin.demo",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin.demo@piedrazul.test",
+      "firstName": "Admin",
+      "lastName": "Demo",
+      "credentials": [
+        { "type": "password", "value": "Admin123*", "temporary": false }
+      ],
+      "realmRoles": ["Admin"]
+    },
+    {
+      "username": "agenda.demo",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "agenda.demo@piedrazul.test",
+      "firstName": "Agendador",
+      "lastName": "Demo",
+      "credentials": [
+        { "type": "password", "value": "Agenda123*", "temporary": false }
+      ],
+      "realmRoles": ["Scheduler"]
+    },
+    {
+      "username": "medico.demo",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "medico.demo@piedrazul.test",
+      "firstName": "Medico",
+      "lastName": "Demo",
+      "credentials": [
+        { "type": "password", "value": "Medico123*", "temporary": false }
+      ],
+      "realmRoles": ["Doctor"]
+    }
+  ]
+}
