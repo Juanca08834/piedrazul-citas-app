@@ -1,0 +1,54 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piedrazul.Domain", "src\Piedrazul.Domain\Piedrazul.Domain.csproj", "{A1E6E301-8E1F-4B74-9C64-28A4BC7FA111}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piedrazul.Application", "src\Piedrazul.Application\Piedrazul.Application.csproj", "{B208A0C1-3E88-4FFB-9B98-22D3A63A4222}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piedrazul.Infrastructure", "src\Piedrazul.Infrastructure\Piedrazul.Infrastructure.csproj", "{C3D4FA60-4D2E-44B0-B58B-20A447C3D333}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piedrazul.Api", "src\Piedrazul.Api\Piedrazul.Api.csproj", "{D4F5B471-50C1-4999-B4EA-1D8750B5E444}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piedrazul.Notifications", "src\Piedrazul.Notifications\Piedrazul.Notifications.csproj", "{7D2C0C28-64F5-4B7B-9F64-2D6F3FA9F9A1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piedrazul.Domain.Tests", "tests\Piedrazul.Domain.Tests\Piedrazul.Domain.Tests.csproj", "{E5A61782-6A3B-4B91-8C03-6E9A2F36F555}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1E6E301-8E1F-4B74-9C64-28A4BC7FA111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1E6E301-8E1F-4B74-9C64-28A4BC7FA111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1E6E301-8E1F-4B74-9C64-28A4BC7FA111}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1E6E301-8E1F-4B74-9C64-28A4BC7FA111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B208A0C1-3E88-4FFB-9B98-22D3A63A4222}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B208A0C1-3E88-4FFB-9B98-22D3A63A4222}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B208A0C1-3E88-4FFB-9B98-22D3A63A4222}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B208A0C1-3E88-4FFB-9B98-22D3A63A4222}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3D4FA60-4D2E-44B0-B58B-20A447C3D333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3D4FA60-4D2E-44B0-B58B-20A447C3D333}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3D4FA60-4D2E-44B0-B58B-20A447C3D333}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3D4FA60-4D2E-44B0-B58B-20A447C3D333}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4F5B471-50C1-4999-B4EA-1D8750B5E444}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4F5B471-50C1-4999-B4EA-1D8750B5E444}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4F5B471-50C1-4999-B4EA-1D8750B5E444}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4F5B471-50C1-4999-B4EA-1D8750B5E444}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D2C0C28-64F5-4B7B-9F64-2D6F3FA9F9A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D2C0C28-64F5-4B7B-9F64-2D6F3FA9F9A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D2C0C28-64F5-4B7B-9F64-2D6F3FA9F9A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D2C0C28-64F5-4B7B-9F64-2D6F3FA9F9A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5A61782-6A3B-4B91-8C03-6E9A2F36F555}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5A61782-6A3B-4B91-8C03-6E9A2F36F555}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5A61782-6A3B-4B91-8C03-6E9A2F36F555}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5A61782-6A3B-4B91-8C03-6E9A2F36F555}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F6920C7D-D7B8-4B0D-AE87-7B342D3C91B2}
+	EndGlobalSection
+EndGlobal

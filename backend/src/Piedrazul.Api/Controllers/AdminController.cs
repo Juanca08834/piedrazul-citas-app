@@ -1,0 +1,73 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Piedrazul.Application;
+
+namespace Piedrazul.Api.Controllers;
+
+[Authorize(Roles = "Admin,Doctor")]
+[Route("api/admin")]
+public sealed class AdminController(IAdministrationService administrationService) : ApiControllerBase
+{
+    private readonly IAdministrationService _administrationService = administrationService;
+
+    [HttpGet("settings")]
+    public async Task<ActionResult<SystemSettingsResponse>> GetSettings(CancellationToken cancellationToken)
+    {
+        var result = await _administrationService.GetSystemSettingsAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("settings")]
+    public async Task<ActionResult<SystemSettingsResponse>> UpdateSettings([FromBody] SystemSettingsRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _administrationService.UpdateSystemSettingsAsync(request, cancellationToken);
+        return result.Succeeded && result.Data is not null ? Ok(result.Data) : FromFailure(result);
+    }
+
+    [HttpGet("provider-schedules")]
+    public async Task<ActionResult<IReadOnlyList<ProviderScheduleResponse>>> GetProviderSchedules(CancellationToken cancellationToken)
+    {
+        var result = await _administrationService.GetProviderSchedulesAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("provider-schedules")]
+    public async Task<ActionResult<ProviderScheduleResponse>> CreateProviderSchedule([FromBody] ProviderScheduleRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _administrationService.CreateProviderScheduleAsync(request, cancellationToken);
+        return result.Succeeded && result.Data is not null ? Ok(result.Data) : FromFailure(result);
+    }
+
+    [HttpPut("provider-schedules/{providerId:guid}")]
+    public async Task<ActionResult<ProviderScheduleResponse>> UpdateProviderSchedule(Guid providerId, [FromBody] ProviderScheduleRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _administrationService.UpdateProviderScheduleAsync(providerId, request, cancellationToken);
+        return result.Succeeded && result.Data is not null ? Ok(result.Data) : FromFailure(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("provider-schedules/{providerId:guid}")]
+    public async Task<IActionResult> DeleteProviderSchedule(Guid providerId, CancellationToken cancellationToken)
+    {
+        var result = await _administrationService.DeleteProviderScheduleAsync(providerId, cancellationToken);
+        return result.Succeeded ? NoContent() : FromFailure(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("patients")]
+    public async Task<ActionResult<IReadOnlyList<PatientLookupResponse>>> SearchPatients([FromQuery] string term, CancellationToken cancellationToken)
+    {
+        var result = await _administrationService.SearchPatientsForAdminAsync(term, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("patients/{patientId:guid}")]
+    public async Task<ActionResult<PatientLookupResponse>> UpdatePatient(Guid patientId, [FromBody] PatientProfileUpsertRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _administrationService.UpdatePatientAsync(patientId, request, cancellationToken);
+        return result.Succeeded && result.Data is not null ? Ok(result.Data) : FromFailure(result);
+    }
+}
