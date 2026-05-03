@@ -33,11 +33,14 @@ public static class ServiceCollectionExtensions
                                     ?? configuration.GetConnectionString("Redis");
         if (string.IsNullOrWhiteSpace(redisConnectionString))
         {
-            throw new InvalidOperationException("Redis connection string is missing.");
+            services.AddSingleton<ICacheService, NullCacheService>();
         }
-
-        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
-        services.AddSingleton<ICacheService, RedisCacheService>();
+        else
+        {
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString + ",abortConnect=false"));
+            services.AddSingleton<ICacheService, RedisCacheService>();
+        }
 
         var notificationsBaseUrl = configuration.GetSection("Notifications").GetValue<string>("BaseUrl");
         if (string.IsNullOrWhiteSpace(notificationsBaseUrl))
