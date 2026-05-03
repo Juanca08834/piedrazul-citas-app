@@ -11,3 +11,10 @@ dist
 
 # env
 .env
+
+# IDE
+.idea/
+
+# logs
+backend/src/Piedrazul.Api/logs/
+*.log
