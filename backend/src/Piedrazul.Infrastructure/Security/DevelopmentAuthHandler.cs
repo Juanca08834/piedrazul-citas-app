@@ -18,9 +18,8 @@ public sealed class DevelopmentAuthHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    ISystemClock clock,
     IOptions<DevelopmentAuthOptions> developmentAuthOptions)
-    : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder, clock)
+    : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     private readonly DevelopmentAuthOptions _developmentAuthOptions = developmentAuthOptions.Value;
 
