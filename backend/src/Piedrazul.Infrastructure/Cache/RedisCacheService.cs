@@ -13,7 +13,7 @@ public sealed class RedisCacheService(IConnectionMultiplexer multiplexer) : ICac
         var cached = await _database.StringGetAsync(key);
         if (cached.HasValue)
         {
-            return JsonSerializer.Deserialize<T>(cached!);
+            return JsonSerializer.Deserialize<T>((string)cached!);
         }
 
         var value = await factory();

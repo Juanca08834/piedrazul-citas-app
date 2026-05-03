@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Piedrazul.Application;
+using Piedrazul.Application.Abstractions.Infrastructure;
 using Piedrazul.Domain;
 using Piedrazul.Infrastructure.Persistence;
 
@@ -615,4 +616,13 @@ public sealed class AppointmentService(AppDbContext dbContext, IAppointmentPdfEx
             _ => "Web"
         };
     }
+
+    public Task<byte[]> ExportAppointmentsCsvAsync(Guid providerId, DateOnly date, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();
+
+    public Task<IReadOnlyList<AppointmentHistoryResponse>> GetAppointmentHistoryAsync(Guid appointmentId, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();
+
+    public Task<OperationResult<AppointmentResponse>> RescheduleAppointmentAsync(RescheduleAppointmentRequest request, string changedBy, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();
 }
