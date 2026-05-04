@@ -15,6 +15,7 @@ export function validatePatientForm(data: {
   lastName: string;
   phone: string;
   email?: string | null;
+  birthDate?: string | null; 
 }) {
   const errors: string[] = [];
   const documentNumber = normalizeText(data.documentNumber);
@@ -42,7 +43,20 @@ export function validatePatientForm(data: {
   if (email && (email.length > 150 || !/^\S+@\S+\.\S+$/.test(email))) {
     errors.push('El correo electrónico no tiene un formato válido.');
   }
+    if (data.birthDate) {
+    const birth = new Date(data.birthDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const minYear = today.getFullYear() - 120;
 
+    if (isNaN(birth.getTime())) {
+      errors.push('La fecha de nacimiento no es válida.');
+    } else if (birth > today) {
+      errors.push('La fecha de nacimiento no puede ser una fecha futura.');
+    } else if (birth.getFullYear() < minYear) {
+      errors.push('La fecha de nacimiento no parece válida.');
+    }
+  }
   return errors;
 }
 
