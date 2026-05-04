@@ -36,8 +36,8 @@ export function validatePatientForm(data: {
     errors.push('Los apellidos solo pueden contener letras, espacios, comillas simples o guiones.');
   }
 
-  if (!digitsOnly.test(phone) || phone.length < 7 || phone.length > 15) {
-    errors.push('El celular debe contener solo números y tener entre 7 y 15 dígitos.');
+  if (!digitsOnly.test(phone) || phone.length !== 10) {
+    errors.push('El celular debe contener exactamente 10 dígitos.');
   }
 
   if (email && (email.length > 150 || !/^\S+@\S+\.\S+$/.test(email))) {
