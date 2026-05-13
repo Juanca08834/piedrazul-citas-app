@@ -30,7 +30,7 @@ public sealed class DevelopmentAuthHandler(
     {
         if (!_env.IsDevelopment())
             throw new InvalidOperationException(
-                "DevelopmentAuthHandler must not run outside of the Development environment.");
+                "DevelopmentAuthHandler solo debe ser utilizado en entornos de desarrollo. Verifique la configuración de autenticación.");
 
         var subject = Request.Headers["X-Debug-Subject"].FirstOrDefault() ?? _developmentAuthOptions.DefaultSubject;
         var name = Request.Headers["X-Debug-Name"].FirstOrDefault() ?? _developmentAuthOptions.DefaultName;

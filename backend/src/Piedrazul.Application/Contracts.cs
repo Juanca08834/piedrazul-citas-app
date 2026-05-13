@@ -197,6 +197,16 @@ public sealed record PatientLookupResponse(
     int ScheduledAppointmentsCount,
     bool HasUserAccount);
 
+public sealed record PatientPublicLookupResponse(
+    bool Exists,
+    Guid? Id,
+    string? FirstName,
+    string? LastName,
+    Gender? Gender,
+    string? MaskedPhone,
+    string? MaskedEmail,
+    int? BirthYear);
+
 public interface IAppointmentService
 {
     Task<IReadOnlyList<ProviderSummaryResponse>> GetActiveProvidersAsync(CancellationToken cancellationToken = default);
