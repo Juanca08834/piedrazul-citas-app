@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -18,13 +19,19 @@ public sealed class DevelopmentAuthHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    IOptions<DevelopmentAuthOptions> developmentAuthOptions)
+    IOptions<DevelopmentAuthOptions> developmentAuthOptions,
+    IHostEnvironment env)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     private readonly DevelopmentAuthOptions _developmentAuthOptions = developmentAuthOptions.Value;
+    private readonly IHostEnvironment _env = env;
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        if (!_env.IsDevelopment())
+            throw new InvalidOperationException(
+                "DevelopmentAuthHandler must not run outside of the Development environment.");
+
         var subject = Request.Headers["X-Debug-Subject"].FirstOrDefault() ?? _developmentAuthOptions.DefaultSubject;
         var name = Request.Headers["X-Debug-Name"].FirstOrDefault() ?? _developmentAuthOptions.DefaultName;
         var email = Request.Headers["X-Debug-Email"].FirstOrDefault() ?? _developmentAuthOptions.DefaultEmail;

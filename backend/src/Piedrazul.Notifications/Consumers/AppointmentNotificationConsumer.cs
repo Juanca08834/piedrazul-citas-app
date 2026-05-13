@@ -7,9 +7,6 @@ using RabbitMQ.Client.Events;
 
 namespace Piedrazul.Notifications.Consumers;
 
-/// 
-/// Consumidor encargado de procesar eventos de notificación de citas desde RabbitMQ.
-/// 
 public sealed class AppointmentNotificationConsumer : BackgroundService
 {
     private const string Exchange = "piedrazul";
@@ -29,18 +26,8 @@ public sealed class AppointmentNotificationConsumer : BackgroundService
             ?? throw new InvalidOperationException("RabbitMq:ConnectionString is required.");
     }
 
-    /// 
-    /// Método principal del servicio en segundo plano.
-    /// Se conecta a RabbitMQ y comienza a consumir mensajes de la cola.
-    /// 
-    /// <param name="stoppingToken">Un token que indica cuándo se está deteniendo el servicio.</param>
-    /// <returns>Una tarea que representa la operación de larga duración.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Appointment notification consumer starting.");
-
-        stoppingToken.ThrowIfCancellationRequested();
-
         var factory = new ConnectionFactory { Uri = new Uri(_connectionString) };
         _connection = await factory.CreateConnectionAsync(stoppingToken);
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
@@ -71,13 +58,8 @@ public sealed class AppointmentNotificationConsumer : BackgroundService
             global: false,
             cancellationToken: stoppingToken);
 
-        var consumer = new EventingBasicConsumer(_channel);
-
-        // Event handler for when a message is received
-        consumer.Received += async (ch, ea) =>
-        {
-            await HandleMessage(ea, ch);
-        };
+        var consumer = new AsyncEventingBasicConsumer(_channel);
+        consumer.ReceivedAsync += OnMessageReceivedAsync;
 
         await _channel.BasicConsumeAsync(
             queue: Queue,
@@ -99,25 +81,24 @@ public sealed class AppointmentNotificationConsumer : BackgroundService
         }
     }
 
-    /// <summary>
-    /// Maneja un mensaje entrante de la cola de RabbitMQ.
-    /// Deserializa el mensaje, lo registra y envía un acuse de recibo (ACK/NACK).
-    /// </summary>
-    /// <param name="ea">Los argumentos del evento que contienen los datos del mensaje.</param>
-    /// <param name="channel">El canal de RabbitMQ.</param>
-    /// <returns>Una tarea que representa la operación asíncrona.</returns>
-    private async Task HandleMessage(BasicDeliverEventArgs ea, IModel channel)
+    private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs ea)
     {
-        var body = ea.Body.ToArray();
-        var message = Encoding.UTF8.GetString(body);
-        var routingKey = ea.RoutingKey;
+        try
+        {
+            var json = Encoding.UTF8.GetString(ea.Body.ToArray());
+            _logger.LogInformation("[{RoutingKey}] {Payload}", ea.RoutingKey, json);
 
-        _logger.LogInformation("[{RoutingKey}] {Payload}", routingKey, message);
+            // Extension point: send WhatsApp / SMS / email based on ea.RoutingKey
 
-        // Extension point: send WhatsApp / SMS / email based on ea.RoutingKey
-
-        if (_channel is not null)
-            await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
+            if (_channel is not null)
+                await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing message [{RoutingKey}]", ea.RoutingKey);
+            if (_channel is not null)
+                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true);
+        }
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
