@@ -95,4 +95,11 @@ public sealed class InternalController(IAppointmentService appointmentService) :
         var history = await _appointmentService.GetAppointmentHistoryAsync(appointmentId, cancellationToken);
         return Ok(history);
     }
+
+    [HttpGet("appointments/by-document")]
+    public async Task<ActionResult<IReadOnlyList<AppointmentResponse>>> GetAppointmentsByDocument([FromQuery] string document, CancellationToken cancellationToken)
+    {
+        var result = await _appointmentService.GetAppointmentsByDocumentAsync(document, cancellationToken);
+        return Ok(result);
+    }
 }

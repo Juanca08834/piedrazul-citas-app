@@ -40,17 +40,21 @@ public sealed class PublicController(IAppointmentService appointmentService, IOp
     }
 
     [HttpGet("patients/lookup")]
-    public async Task<ActionResult<PatientLookupResponse?>> LookupPatient([FromQuery] string document, CancellationToken cancellationToken)
+    public async Task<ActionResult<PatientPublicLookupResponse>> LookupPatient([FromQuery] string document, CancellationToken cancellationToken)
     {
-        var result = await _appointmentService.GetPatientByDocumentAsync(document, cancellationToken);
-        return Ok(result);
-    }
+        var patient = await _appointmentService.GetPatientByDocumentAsync(document, cancellationToken);
+        if (patient is null)
+            return Ok(new PatientPublicLookupResponse(false, null, null, null, null, null, null, null));
 
-    [HttpGet("appointments/by-document")]
-    public async Task<ActionResult<IReadOnlyList<AppointmentResponse>>> GetAppointmentsByDocument([FromQuery] string document, CancellationToken cancellationToken)
-    {
-        var result = await _appointmentService.GetAppointmentsByDocumentAsync(document, cancellationToken);
-        return Ok(result);
+        return Ok(new PatientPublicLookupResponse(
+            Exists: true,
+            Id: patient.Id,
+            FirstName: patient.FirstName,
+            LastName: patient.LastName,
+            Gender: patient.Gender,
+            MaskedPhone: PiiMasking.MaskPhone(patient.Phone),
+            MaskedEmail: PiiMasking.MaskEmail(patient.Email),
+            BirthYear: patient.BirthDate?.Year));
     }
 
     [HttpPost("appointments")]

@@ -115,6 +115,17 @@ export interface PatientLookup {
   hasUserAccount?: boolean;
 }
 
+export interface PatientPublicLookup {
+  exists: boolean;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: Gender;
+  maskedPhone?: string;
+  maskedEmail?: string;
+  birthYear?: number;
+}
+
 export interface SystemSettings {
   weeksAheadBooking: number;
   timeZoneId: string;

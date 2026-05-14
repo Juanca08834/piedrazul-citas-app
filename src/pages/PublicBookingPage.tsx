@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../api/http';
 import { useAuth } from '../auth/AuthContext';
-import type { AppointmentResponse, AvailabilitySlot, CaptchaChallenge, Gender, GenderOption, PatientLookup, PatientProfile, ProviderSummary, PublicAppointmentPayload } from '../types';
+import type { AppointmentResponse, AvailabilitySlot, CaptchaChallenge, Gender, GenderOption, PatientProfile, PatientPublicLookup, ProviderSummary, PublicAppointmentPayload } from '../types';
 import { formatDateLabel, sanitizeNameInput, validatePatientForm } from '../utils/validators';
 
 function toMinutes(value: string) {
@@ -49,8 +49,7 @@ export function PublicBookingPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [documentVerified, setDocumentVerified] = useState(false);
-  const [patientLookup, setPatientLookup] = useState<PatientLookup | null>(null);
-  const [mustCreateAccount, setMustCreateAccount] = useState(false);
+  const [patientLookup, setPatientLookup] = useState<PatientPublicLookup | null>(null);
   const [captcha, setCaptcha] = useState<CaptchaChallenge>(createCaptchaChallenge);
 
   useEffect(() => {
@@ -139,7 +138,6 @@ export function PublicBookingPage() {
     if (!isPatientSession && field === 'documentNumber') {
       setDocumentVerified(false);
       setPatientLookup(null);
-      setMustCreateAccount(false);
     }
     setMessage(null);
   };
@@ -155,38 +153,31 @@ export function PublicBookingPage() {
       setLookupLoading(true);
       setMessage(null);
       setSuccess(null);
-      const lookup = await apiRequest<PatientLookup | null>(`/api/public/patients/lookup?document=${documentNumber}`, null);
+      const lookup = await apiRequest<PatientPublicLookup>(`/api/public/patients/lookup?document=${documentNumber}`, null);
       setDocumentVerified(true);
-      setPatientLookup(lookup);
+      setPatientLookup(lookup.exists ? lookup : null);
 
-      if (lookup) {
+      if (lookup.exists) {
         setForm((current) => ({
           ...current,
           documentNumber,
-          firstName: lookup.firstName,
-          lastName: lookup.lastName,
-          phone: lookup.phone,
-          gender: lookup.gender,
-          birthDate: lookup.birthDate ?? '',
-          email: lookup.email ?? '',
+          firstName: lookup.firstName ?? '',
+          lastName: lookup.lastName ?? '',
+          gender: lookup.gender ?? ('' as GenderOption),
+          phone: '',
+          birthDate: '',
+          email: '',
         }));
-
-        const reachedLimit = (lookup.scheduledAppointmentsCount ?? 0) >= 3 && !lookup.hasUserAccount;
-        setMustCreateAccount(reachedLimit);
-        if (reachedLimit) {
-          setMessage('Ya tienes 3 reservas como invitado. Debes crear tu usuario para seguir reservando.');
-        }
       } else {
         setForm((current) => ({
           ...current,
           firstName: '',
           lastName: '',
           phone: '',
-          gender: '',
+          gender: '' as GenderOption,
           birthDate: '',
           email: '',
         }));
-        setMustCreateAccount(false);
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No fue posible verificar la cédula.');
@@ -253,11 +244,6 @@ export function PublicBookingPage() {
     setMessage(null);
     setSuccess(null);
 
-    if (mustCreateAccount) {
-      setMessage('Debes crear tu usuario antes de generar una nueva reserva.');
-      return;
-    }
-
     const validationError = validateReservation();
     if (validationError) {
       setMessage(validationError);
@@ -314,7 +300,7 @@ export function PublicBookingPage() {
             {documentVerified && !patientLookup && <div className="feedback-card success">No encontramos esta cédula. Continúa llenando tus datos para reservar.</div>}
             {patientLookup && (
               <div className="feedback-card success">
-                Encontramos información previa para {patientLookup.fullName}. Tus datos fueron rellenados automáticamente.
+                Encontramos información previa para <strong>{patientLookup.firstName} {patientLookup.lastName}</strong>. Nombre y género fueron rellenados; ingresa los datos de contacto para continuar.
               </div>
             )}
           </section>
@@ -338,6 +324,7 @@ export function PublicBookingPage() {
             <label>
               Celular
               <input inputMode="numeric" maxLength={15} value={form.phone} disabled={!isPatientSession && !documentVerified} onChange={(event) => handleChange('phone', event.target.value.replace(/\D/g, ''))} />
+              {!isPatientSession && patientLookup?.maskedPhone && <small className="muted-text">Registrado: {patientLookup.maskedPhone}</small>}
             </label>
             <label>
               Género
@@ -351,10 +338,12 @@ export function PublicBookingPage() {
             <label>
               Fecha de nacimiento
               <input type="date" value={form.birthDate} disabled={!isPatientSession && !documentVerified} onChange={(event) => handleChange('birthDate', event.target.value)} />
+              {!isPatientSession && patientLookup?.birthYear && <small className="muted-text">Año registrado: {patientLookup.birthYear}</small>}
             </label>
             <label className="span-two">
               Correo electrónico (opcional)
               <input type="email" maxLength={150} value={form.email} disabled={!isPatientSession && !documentVerified} onChange={(event) => handleChange('email', event.target.value)} />
+              {!isPatientSession && patientLookup?.maskedEmail && <small className="muted-text">Registrado: {patientLookup.maskedEmail}</small>}
             </label>
           </div>
         </section>
@@ -420,14 +409,9 @@ export function PublicBookingPage() {
             </div>
           )}
 
-          {mustCreateAccount && (
-            <div className="feedback-card error">
-              Ya completaste 3 reservas como invitado. Para agendar una nueva cita debes <Link to="/crear-cuenta">crear tu usuario</Link>.
-            </div>
-          )}
           {message && <div className="feedback-card error">{message}</div>}
           <div className="inline-actions end">
-            <button type="submit" className="button" disabled={submitting || mustCreateAccount}>
+            <button type="submit" className="button" disabled={submitting}>
               {submitting ? 'Confirmando reserva...' : 'Confirmar reserva'}
             </button>
           </div>

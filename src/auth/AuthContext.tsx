@@ -3,10 +3,12 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { appConfig } from '../config';
 import type { DemoRole, SessionUser } from '../types';
+import { hashPassword, verifyPassword } from '../utils/passwordHash';
 
 const PATIENT_SESSION_STORAGE_KEY = 'piedrazul-patient-session';
 const INTERNAL_SESSION_STORAGE_KEY = 'piedrazul-internal-session';
 const ACCOUNTS_STORAGE_KEY = 'piedrazul-accounts';
+const ACCOUNTS_VERSION_KEY = 'piedrazul-accounts-v2';
 const RESET_STORAGE_KEY = 'piedrazul-password-reset';
 
 interface DemoAccount {
@@ -133,37 +135,23 @@ function mapKeycloakSession(instance: Keycloak): SessionUser {
   };
 }
 
+async function initAccounts(): Promise<void> {
+  if (localStorage.getItem(ACCOUNTS_VERSION_KEY)) return;
+  localStorage.removeItem(ACCOUNTS_STORAGE_KEY);
+  const hashed = await Promise.all(
+    seededAccounts.map(async (a) => ({ ...a, password: await hashPassword(a.password) })),
+  );
+  localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(hashed));
+  localStorage.setItem(ACCOUNTS_VERSION_KEY, '1');
+}
+
 function readAccounts(): DemoAccount[] {
   const stored = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
-  if (!stored) {
-    localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(seededAccounts));
-    return seededAccounts;
-  }
-
+  if (!stored) return [];
   try {
-    const parsed = JSON.parse(stored) as DemoAccount[];
-    const merged = [...parsed];
-
-    for (const account of seededAccounts) {
-      const exists = merged.some((item) => {
-        if (account.roles.includes('Patient')) {
-          return item.roles.includes('Patient') && item.documentNumber === account.documentNumber;
-        }
-        return (item.email ?? '').toLowerCase() === (account.email ?? '').toLowerCase();
-      });
-
-      if (!exists) {
-        merged.push(account);
-      }
-    }
-
-    if (merged.length !== parsed.length) {
-      localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(merged));
-    }
-    return merged;
+    return JSON.parse(stored) as DemoAccount[];
   } catch {
-    localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(seededAccounts));
-    return seededAccounts;
+    return [];
   }
 }
 
@@ -270,10 +258,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    readAccounts();
-    setPatientSession(readStoredSession(PATIENT_SESSION_STORAGE_KEY));
-    setInternalSession(readStoredSession(INTERNAL_SESSION_STORAGE_KEY));
-    setReady(true);
+    initAccounts().then(() => {
+      setPatientSession(readStoredSession(PATIENT_SESSION_STORAGE_KEY));
+      setInternalSession(readStoredSession(INTERNAL_SESSION_STORAGE_KEY));
+      setReady(true);
+    });
   }, []);
 
   const session = isInternalRoute ? internalSession : patientSession;
@@ -338,7 +327,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return !isPatientAccount && (item.email ?? '').toLowerCase() === normalizedIdentifier;
       });
 
-      if (!account || account.password !== password) {
+      const passwordMatch = account ? await verifyPassword(password, account.password) : false;
+      if (!account || !passwordMatch) {
         throw new Error(portal === 'patient'
           ? 'Cédula o contraseña incorrectas. Verifica tus datos e inténtalo de nuevo.'
           : 'Correo o contraseña incorrectos. Verifica tus credenciales e inténtalo de nuevo.');
@@ -381,7 +371,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const displayName = `${payload.firstName.trim()} ${payload.lastName.trim()}`.trim();
       const account: DemoAccount = {
         documentNumber: normalizedDocument,
-        password: payload.password,
+        password: await hashPassword(payload.password),
         displayName,
         subject: `patient-${normalizedDocument}`,
         roles: ['Patient'],
@@ -406,7 +396,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const account: DemoAccount = {
         email: normalizedEmail,
-        password: payload.password,
+        password: await hashPassword(payload.password),
         displayName: payload.displayName.trim(),
         subject: `staff-${normalizedEmail}`,
         roles: payload.roles,
@@ -449,7 +439,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('La cuenta asociada al restablecimiento ya no existe.');
       }
 
-      accounts[accountIndex] = { ...accounts[accountIndex], password: newPassword };
+      accounts[accountIndex] = { ...accounts[accountIndex], password: await hashPassword(newPassword) };
       saveAccounts(accounts);
       saveResetRequests(requests.filter((item) => !(item.identifier === normalizedIdentifier && item.code === code.trim())));
     },

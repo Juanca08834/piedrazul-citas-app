@@ -10,6 +10,7 @@ using Piedrazul.Infrastructure.Observability;
 using Piedrazul.Infrastructure.Persistence;
 using Piedrazul.Infrastructure.Persistence.Repositories;
 using Piedrazul.Infrastructure.Services;
+using RabbitMQ.Client;
 using StackExchange.Redis;
 
 namespace Piedrazul.Infrastructure;
@@ -42,17 +43,28 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<ICacheService, RedisCacheService>();
         }
 
+        var rabbitMqConnectionString = configuration.GetSection("RabbitMq").GetValue<string>("ConnectionString");
         var notificationsBaseUrl = configuration.GetSection("Notifications").GetValue<string>("BaseUrl");
-        if (string.IsNullOrWhiteSpace(notificationsBaseUrl))
+
+        if (!string.IsNullOrWhiteSpace(rabbitMqConnectionString))
         {
-            services.AddSingleton<INotificationClient, NoOpNotificationClient>();
+            services.AddSingleton<IConnection>(_ =>
+            {
+                var factory = new ConnectionFactory { Uri = new Uri(rabbitMqConnectionString) };
+                return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+            });
+            services.AddSingleton<INotificationClient, RabbitMqNotificationClient>();
         }
-        else
+        else if (!string.IsNullOrWhiteSpace(notificationsBaseUrl))
         {
             services.AddHttpClient<INotificationClient, HttpNotificationClient>(client =>
             {
                 client.BaseAddress = new Uri(notificationsBaseUrl);
             });
+        }
+        else
+        {
+            services.AddSingleton<INotificationClient, NoOpNotificationClient>();
         }
 
         return services;

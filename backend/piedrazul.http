@@ -1,0 +1,313 @@
+### ============================================================
+### Piedrazul - Citas App | Pruebas API para Sustentación
+### URL base: http://localhost:5184
+### Auth: Development mode usa headers X-Debug-* (sin Keycloak)
+### ============================================================
+
+@baseUrl = http://localhost:5184
+
+### ─────────────────────────────────────────
+### VARIABLES DE USUARIO (cambiar según rol)
+### ─────────────────────────────────────────
+
+### Como Paciente (rol: Patient)
+@subjectPaciente = demo-patient
+@nombrePaciente  = Paciente Demo
+@emailPaciente   = paciente.demo@piedrazul.test
+@rolesPaciente   = Patient
+
+### Como Personal Interno (roles válidos: Admin | Scheduler | Doctor)
+@subjectAdmin = admin-001
+@nombreAdmin  = Administrador Piedrazul
+@emailAdmin   = admin@piedrazul.test
+@rolesAdmin   = Admin
+
+### IDs de datos semilla (creados automáticamente por el seeder)
+@docPaciente = 1000000001
+@proveedorMed = MED001
+@proveedorTer = TER001
+@proveedorPsi = PSI001
+
+
+### ============================================================
+### 1. HEALTH CHECK
+### ============================================================
+
+### 1.1 Verificar que la API está viva
+GET {{baseUrl}}/api/health
+
+
+### ============================================================
+### 2. ENDPOINTS PÚBLICOS (sin autenticación)
+### ============================================================
+
+### 2.1 Información del centro médico
+GET {{baseUrl}}/api/public/info
+
+###
+
+### 2.2 Listar proveedores disponibles
+GET {{baseUrl}}/api/public/providers
+
+###
+
+### 2.3 Ver disponibilidad de un proveedor por fecha
+### Cambia la fecha al próximo lunes (o un día con horario configurado)
+GET {{baseUrl}}/api/public/providers/{{proveedorMed}}/availability?date=2026-05-11
+
+###
+
+### 2.4 Buscar paciente por número de documento
+GET {{baseUrl}}/api/public/patients/lookup?document={{docPaciente}}
+
+###
+
+### 2.5 Ver citas de un paciente por documento (sin login)
+GET {{baseUrl}}/api/public/appointments/by-document?document={{docPaciente}}
+
+###
+
+### 2.6 Crear cita pública (sin login)
+### *** ESTE REQUEST DISPARA EL EVENTO RABBITMQ ***
+### Cambia appointmentDate y startTime a un slot disponible
+POST {{baseUrl}}/api/public/appointments
+Content-Type: application/json
+
+{
+  "providerId": "{{proveedorMed}}",
+  "patientDocument": "9999999999",
+  "patientName": "Juan García",
+  "patientEmail": "juan.garcia@test.com",
+  "patientPhone": "3109876543",
+  "appointmentDate": "2026-05-12",
+  "startTime": "08:00"
+}
+
+
+### ============================================================
+### 3. ENDPOINTS DE PACIENTE (requiere autenticación Patient)
+### ============================================================
+
+### 3.1 Ver mi perfil de paciente
+GET {{baseUrl}}/api/patient/profile
+X-Debug-Subject: {{subjectPaciente}}
+X-Debug-Name: {{nombrePaciente}}
+X-Debug-Email: {{emailPaciente}}
+X-Debug-Roles: {{rolesPaciente}}
+
+###
+
+### 3.2 Crear/actualizar mi perfil
+PUT {{baseUrl}}/api/patient/profile
+Content-Type: application/json
+X-Debug-Subject: {{subjectPaciente}}
+X-Debug-Name: {{nombrePaciente}}
+X-Debug-Email: {{emailPaciente}}
+X-Debug-Roles: {{rolesPaciente}}
+
+{
+  "document": "{{docPaciente}}",
+  "name": "Paciente Demo",
+  "email": "{{emailPaciente}}",
+  "phone": "3001234567",
+  "gender": "Female",
+  "birthDate": "1992-05-12"
+}
+
+###
+
+### 3.3 Ver mis citas como paciente autenticado
+GET {{baseUrl}}/api/patient/appointments
+X-Debug-Subject: {{subjectPaciente}}
+X-Debug-Name: {{nombrePaciente}}
+X-Debug-Email: {{emailPaciente}}
+X-Debug-Roles: {{rolesPaciente}}
+
+###
+
+### 3.4 Crear cita como paciente autenticado
+### *** ESTE REQUEST TAMBIÉN DISPARA EL EVENTO RABBITMQ ***
+POST {{baseUrl}}/api/patient/appointments
+Content-Type: application/json
+X-Debug-Subject: {{subjectPaciente}}
+X-Debug-Name: {{nombrePaciente}}
+X-Debug-Email: {{emailPaciente}}
+X-Debug-Roles: {{rolesPaciente}}
+
+{
+  "providerId": "{{proveedorTer}}",
+  "appointmentDate": "2026-05-12",
+  "startTime": "08:00"
+}
+
+###
+
+### 3.5 Cancelar mi cita (reemplaza {id} con el ID de una cita real)
+### *** ESTE REQUEST DISPARA appointment.status en RabbitMQ ***
+PATCH {{baseUrl}}/api/patient/appointments/{id}/cancel
+X-Debug-Subject: {{subjectPaciente}}
+X-Debug-Name: {{nombrePaciente}}
+X-Debug-Email: {{emailPaciente}}
+X-Debug-Roles: {{rolesPaciente}}
+
+
+### ============================================================
+### 4. ENDPOINTS INTERNOS (roles: Admin | Scheduler | Doctor)
+### ============================================================
+
+### 4.1 Buscar pacientes (interno)
+GET {{baseUrl}}/api/internal/patients/search?q=Demo
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+###
+
+### 4.2 Ver citas por proveedor y fecha
+GET {{baseUrl}}/api/internal/appointments?providerId={{proveedorMed}}&date=2026-05-12
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+###
+
+### 4.3 Crear cita interna
+### *** DISPARA appointment.created en RabbitMQ ***
+POST {{baseUrl}}/api/internal/appointments
+Content-Type: application/json
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+{
+  "providerId": "{{proveedorPsi}}",
+  "patientDocument": "1000000001",
+  "appointmentDate": "2026-05-16",
+  "startTime": "09:00",
+  "notes": "Cita creada desde prueba interna"
+}
+
+###
+
+### 4.4 Cambiar estado de una cita (reemplaza {id} con ID real)
+### *** DISPARA appointment.status en RabbitMQ ***
+### status válidos: Confirmed | Completed | Cancelled | NoShow
+PATCH {{baseUrl}}/api/internal/appointments/{id}/status
+Content-Type: application/json
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+{
+  "status": "Confirmed"
+}
+
+###
+
+### 4.5 Reprogramar una cita (reemplaza {id} con ID real)
+### *** DISPARA appointment.status en RabbitMQ ***
+PUT {{baseUrl}}/api/internal/appointments/{id}/reschedule
+Content-Type: application/json
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+{
+  "appointmentDate": "2026-05-13",
+  "startTime": "10:00"
+}
+
+###
+
+### 4.6 Ver historial de una cita (reemplaza {id} con ID real)
+GET {{baseUrl}}/api/internal/appointments/{id}/history
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+###
+
+### 4.7 Exportar citas a PDF
+GET {{baseUrl}}/api/internal/appointments/export/pdf?providerId={{proveedorMed}}&date=2026-05-12
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+###
+
+### 4.8 Exportar citas a CSV
+GET {{baseUrl}}/api/internal/appointments/export/csv?providerId={{proveedorMed}}&date=2026-05-12
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+
+### ============================================================
+### 5. ENDPOINTS DE ADMINISTRACIÓN (solo rol: Admin)
+### ============================================================
+
+### 5.1 Ver configuración del sistema
+GET {{baseUrl}}/api/admin/settings
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+###
+
+### 5.2 Actualizar configuración
+PUT {{baseUrl}}/api/admin/settings
+Content-Type: application/json
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+{
+  "weeksAhead": 8,
+  "timezone": "America/Bogota"
+}
+
+###
+
+### 5.3 Ver horarios de proveedores
+GET {{baseUrl}}/api/admin/provider-schedules
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+###
+
+### 5.4 Crear horario de proveedor
+POST {{baseUrl}}/api/admin/provider-schedules
+Content-Type: application/json
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
+
+{
+  "providerId": "{{proveedorMed}}",
+  "dayOfWeek": "Monday",
+  "startTime": "08:00",
+  "endTime": "12:00",
+  "slotDurationMinutes": 30
+}
+
+###
+
+### 5.5 Buscar pacientes (admin)
+GET {{baseUrl}}/api/admin/patients?q=Demo
+X-Debug-Subject: {{subjectAdmin}}
+X-Debug-Name: {{nombreAdmin}}
+X-Debug-Email: {{emailAdmin}}
+X-Debug-Roles: {{rolesAdmin}}
