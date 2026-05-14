@@ -52,22 +52,9 @@ public sealed class PublicController(IAppointmentService appointmentService, IOp
             FirstName: patient.FirstName,
             LastName: patient.LastName,
             Gender: patient.Gender,
-            MaskedPhone: MaskPhone(patient.Phone),
-            MaskedEmail: MaskEmail(patient.Email),
+            MaskedPhone: PiiMasking.MaskPhone(patient.Phone),
+            MaskedEmail: PiiMasking.MaskEmail(patient.Email),
             BirthYear: patient.BirthDate?.Year));
-    }
-
-    private static string? MaskPhone(string? phone)
-    {
-        if (string.IsNullOrWhiteSpace(phone) || phone.Length < 4) return null;
-        return $"*** ***-{phone[^4..]}";
-    }
-
-    private static string? MaskEmail(string? email)
-    {
-        if (string.IsNullOrWhiteSpace(email)) return null;
-        var at = email.IndexOf('@');
-        return at > 0 ? $"{email[0]}****{email[at..]}" : null;
     }
 
     [HttpPost("appointments")]
