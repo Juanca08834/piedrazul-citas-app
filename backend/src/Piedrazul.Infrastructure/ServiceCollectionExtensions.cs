@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Piedrazul.Application.Abstractions.Infrastructure;
 using Piedrazul.Application.Abstractions.Repositories;
 using Piedrazul.Infrastructure.Cache;
+using Piedrazul.Infrastructure.Keycloak;
 using Piedrazul.Infrastructure.Notifications;
 using Piedrazul.Infrastructure.Observability;
 using Piedrazul.Infrastructure.Persistence;
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISystemSettingsRepository, SystemSettingsRepository>();
 
         services.AddScoped<IAppointmentPdfExporter, AppointmentPdfExporter>();
+        services.AddScoped<IAppointmentExcelExporter, AppointmentExcelExporter>();
         services.AddScoped<IAuditLogger, SerilogAuditLogger>();
 
         var redisConnectionString = configuration.GetSection("Redis").GetValue<string>("ConnectionString")
@@ -65,6 +67,18 @@ public static class ServiceCollectionExtensions
         else
         {
             services.AddSingleton<INotificationClient, NoOpNotificationClient>();
+        }
+
+        var keycloakUrl = configuration["Keycloak:AuthServerUrl"];
+        if (!string.IsNullOrWhiteSpace(keycloakUrl))
+        {
+            services.AddHttpClient();
+            services.AddScoped<IKeycloakAdminClient, KeycloakAdminClient>();
+        }
+        else
+        {
+            services.AddHttpClient();
+            services.AddScoped<IKeycloakAdminClient, NoOpKeycloakAdminClient>();
         }
 
         return services;
