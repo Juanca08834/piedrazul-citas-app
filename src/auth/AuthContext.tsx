@@ -51,7 +51,7 @@ interface AuthContextValue {
   loginWithCredentials: (identifier: string, password: string, portal: 'patient' | 'internal') => Promise<SessionUser>;
   registerPatientAccount: (payload: RegisterPayload) => Promise<SessionUser>;
   createInternalDemoAccount: (payload: InternalAccountPayload) => Promise<void>;
-  requestPasswordReset: (identifier: string) => Promise<string>;
+  requestPasswordReset: (identifier: string) => Promise<string | null>;
   resetPassword: (identifier: string, code: string, newPassword: string) => Promise<void>;
 }
 
@@ -421,7 +421,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const requests = readResetRequests().filter((item) => item.identifier !== normalizedIdentifier);
       requests.push({ identifier: normalizedIdentifier, code, expiresAt: Date.now() + 15 * 60 * 1000 });
       saveResetRequests(requests);
-      return code;
+      return appConfig.authMode === 'demo' ? code : null;
     },
     async resetPassword(identifier, code, newPassword) {
       const normalizedIdentifier = identifier.trim().toLowerCase();
