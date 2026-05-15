@@ -57,6 +57,9 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 Cache/
  NullCacheService.cs
  RedisCacheService.cs
+Keycloak/
+ KeycloakAdminClient.cs
+ NoOpKeycloakAdminClient.cs
 Notifications/
  HttpNotificationClient.cs
  NoOpNotificationClient.cs
@@ -78,7 +81,9 @@ Security/
  KeycloakClaimsEnricher.cs
 Seeding/DataSeeder.cs
 ServiceCollectionExtensions.cs
-Services/AppointmentPdfExporter.cs
+Services/
+ AppointmentExcelExporter.cs
+ AppointmentPdfExporter.cs
 
 [metadataReferences]
 ../
@@ -394,6 +399,9 @@ Services/AppointmentPdfExporter.cs
  System.Xml.XPath.XDocument.dll
  WindowsBase.dll
 <NUGET>/
+ epplus.interfaces/7.5.0/lib/net8.0/EPPlus.Interfaces.dll
+ epplus.system.drawing/7.5.0/lib/net8.0/EPPlus.System.Drawing.dll
+ epplus/7.5.3/lib/net8.0/EPPlus.dll
  microsoft.aspnetcore.authentication.jwtbearer/10.0.0/lib/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
  microsoft.entityframeworkcore.abstractions/10.0.0/lib/net10.0/Microsoft.EntityFrameworkCore.Abstractions.dll
  microsoft.entityframeworkcore.relational/10.0.0/lib/net10.0/Microsoft.EntityFrameworkCore.Relational.dll
@@ -404,13 +412,17 @@ Services/AppointmentPdfExporter.cs
  microsoft.identitymodel.protocols.openidconnect/8.0.1/lib/net9.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
  microsoft.identitymodel.protocols/8.0.1/lib/net9.0/Microsoft.IdentityModel.Protocols.dll
  microsoft.identitymodel.tokens/8.0.1/lib/net9.0/Microsoft.IdentityModel.Tokens.dll
+ microsoft.io.recyclablememorystream/3.0.1/lib/net6.0/Microsoft.IO.RecyclableMemoryStream.dll
+ microsoft.win32.systemevents/8.0.0/lib/net8.0/Microsoft.Win32.SystemEvents.dll
  npgsql.entityframeworkcore.postgresql/10.0.0/lib/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
  npgsql/10.0.0/lib/net10.0/Npgsql.dll
  pipelines.sockets.unofficial/2.2.8/lib/net5.0/Pipelines.Sockets.Unofficial.dll
  questpdf/2024.3.0/lib/net8.0/QuestPDF.dll
  rabbitmq.client/7.0.0/lib/net8.0/RabbitMQ.Client.dll
  stackexchange.redis/2.8.16/lib/net6.0/StackExchange.Redis.dll
+ system.drawing.common/8.0.4/lib/net8.0/System.Drawing.Common.dll
  system.identitymodel.tokens.jwt/8.0.1/lib/net9.0/System.IdentityModel.Tokens.Jwt.dll
+ system.security.cryptography.pkcs/8.0.1/lib/net8.0/System.Security.Cryptography.Pkcs.dll
 
 [analyzerReferences]
 <DOTNET>/packs/Microsoft.AspNetCore.App.Ref/10.0.3/analyzers/dotnet/cs/

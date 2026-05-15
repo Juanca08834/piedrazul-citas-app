@@ -57,6 +57,15 @@ public sealed class InternalController(
         return File(bytes, "text/csv", $"citas_{date:yyyyMMdd}.csv");
     }
 
+    [HttpGet("appointments/export/xlsx")]
+    public async Task<IActionResult> ExportXlsx([FromQuery] Guid providerId, [FromQuery] DateOnly date, CancellationToken cancellationToken)
+    {
+        var bytes = await _query.ExportAppointmentsXlsxAsync(providerId, date, cancellationToken);
+        if (bytes.Length == 0)
+            return NotFound(new { errors = new[] { "No fue posible generar el Excel solicitado." } });
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"citas_{date:yyyyMMdd}.xlsx");
+    }
+
     [HttpPatch("appointments/{appointmentId:guid}/status")]
     public async Task<ActionResult<AppointmentResponse>> UpdateAppointmentStatus(Guid appointmentId, [FromBody] AppointmentStatusUpdateRequest request, CancellationToken cancellationToken)
     {

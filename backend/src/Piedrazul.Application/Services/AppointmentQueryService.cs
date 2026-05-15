@@ -6,10 +6,12 @@ namespace Piedrazul.Application;
 
 public sealed class AppointmentQueryService(
     IAppointmentRepository appointmentRepository,
-    IAppointmentPdfExporter pdfExporter) : IAppointmentQueryService
+    IAppointmentPdfExporter pdfExporter,
+    IAppointmentExcelExporter excelExporter) : IAppointmentQueryService
 {
     private readonly IAppointmentRepository _appointments = appointmentRepository;
     private readonly IAppointmentPdfExporter _pdfExporter = pdfExporter;
+    private readonly IAppointmentExcelExporter _excelExporter = excelExporter;
 
     public async Task<OperationResult<AppointmentListResponse>> GetAppointmentsByProviderAndDateAsync(Guid providerId, DateOnly date, CancellationToken cancellationToken = default)
     {
@@ -90,6 +92,20 @@ public sealed class AppointmentQueryService(
 
         var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
         return encoding.GetBytes(builder.ToString());
+    }
+
+    public async Task<byte[]> ExportAppointmentsXlsxAsync(Guid providerId, DateOnly date, CancellationToken cancellationToken = default)
+    {
+        var appointmentsResult = await GetAppointmentsByProviderAndDateAsync(providerId, date, cancellationToken);
+        if (!appointmentsResult.Succeeded || appointmentsResult.Data is null)
+            return Array.Empty<byte>();
+
+        return _excelExporter.Export(
+            "Piedrazul - Centro Médico",
+            appointmentsResult.Data.ProviderName,
+            appointmentsResult.Data.Specialty,
+            date,
+            appointmentsResult.Data.Items);
     }
 
     private static string EscapeCsv(string value)

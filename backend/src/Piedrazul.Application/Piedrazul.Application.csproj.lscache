@@ -55,9 +55,11 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 
 [sourceFiles]
 Abstractions/Infrastructure/
+ IAppointmentExcelExporter.cs
  IAppointmentPdfExporter.cs
  IAuditLogger.cs
  ICacheService.cs
+ IKeycloakAdminClient.cs
  INotificationClient.cs
 Abstractions/Repositories/
  IAppointmentRepository.cs
@@ -73,7 +75,14 @@ PiiMasking.cs
 ServiceCollectionExtensions.cs
 Services/
  AdministrationService.cs
+ AppointmentBookingService.cs
+ AppointmentLifecycleService.cs
+ AppointmentMapper.cs
+ AppointmentQueryService.cs
  AppointmentService.cs
+ AvailabilityExtensions.cs
+ AvailabilityService.cs
+ PatientLookupService.cs
  PatientService.cs
 Validation.cs
 

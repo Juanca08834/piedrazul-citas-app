@@ -226,6 +226,7 @@ public interface IAppointmentQueryService
     Task<IReadOnlyList<AppointmentResponse>> GetAppointmentsByDocumentAsync(string documentNumber, CancellationToken cancellationToken = default);
     Task<byte[]> ExportAppointmentsPdfAsync(Guid providerId, DateOnly date, CancellationToken cancellationToken = default);
     Task<byte[]> ExportAppointmentsCsvAsync(Guid providerId, DateOnly date, CancellationToken cancellationToken = default);
+    Task<byte[]> ExportAppointmentsXlsxAsync(Guid providerId, DateOnly date, CancellationToken cancellationToken = default);
 }
 
 public interface IAppointmentLifecycleService

@@ -56,6 +56,10 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 
 [sourceFiles]
 Consumers/AppointmentNotificationConsumer.cs
+Notifications/
+ INotificationSender.cs
+ NullNotificationSender.cs
+ SmtpNotificationSender.cs
 obj/Debug/net10.0/
  .NETCoreApp,Version=v10.0.AssemblyAttributes.cs
  Piedrazul.Notifications.AssemblyInfo.cs
@@ -373,11 +377,15 @@ Program.cs
  System.Xml.XPath.XDocument.dll
  WindowsBase.dll
 <NUGET>/
+ bouncycastle.cryptography/2.5.1/lib/net6.0/BouncyCastle.Cryptography.dll
+ mailkit/4.12.0/lib/net8.0/MailKit.dll
  microsoft.openapi/1.2.3/lib/netstandard2.0/Microsoft.OpenApi.dll
+ mimekit/4.12.0/lib/net8.0/MimeKit.dll
  rabbitmq.client/7.0.0/lib/net8.0/RabbitMQ.Client.dll
  swashbuckle.aspnetcore.swagger/6.5.0/lib/net7.0/Swashbuckle.AspNetCore.Swagger.dll
  swashbuckle.aspnetcore.swaggergen/6.5.0/lib/net7.0/Swashbuckle.AspNetCore.SwaggerGen.dll
  swashbuckle.aspnetcore.swaggerui/6.5.0/lib/net7.0/Swashbuckle.AspNetCore.SwaggerUI.dll
+ system.security.cryptography.pkcs/8.0.1/lib/net8.0/System.Security.Cryptography.Pkcs.dll
 
 [analyzerReferences]
 <DOTNET>/packs/Microsoft.AspNetCore.App.Ref/10.0.3/analyzers/dotnet/cs/

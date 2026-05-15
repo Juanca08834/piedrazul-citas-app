@@ -127,6 +127,12 @@ public sealed class AppointmentServiceTests
             Array.Empty<byte>();
     }
 
+    private sealed class NoOpExcelExporter : IAppointmentExcelExporter
+    {
+        public byte[] Export(string c, string p, string s, DateOnly d, IReadOnlyList<AppointmentResponse> items) =>
+            Array.Empty<byte>();
+    }
+
     /// <summary>
     /// Fake IAvailabilityService que devuelve un slot disponible a las 09:00.
     /// Usado por AppointmentBookingService y AppointmentLifecycleService en tests.
@@ -174,7 +180,8 @@ public sealed class AppointmentServiceTests
     {
         return new AppointmentQueryService(
             appointmentRepo ?? new FakeAppointmentRepo(),
-            new NoOpPdfExporter());
+            new NoOpPdfExporter(),
+            new NoOpExcelExporter());
     }
 
     private static AppointmentLifecycleService BuildLifecycleService(
