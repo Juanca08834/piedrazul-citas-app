@@ -53,7 +53,9 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IConnection>(_ =>
             {
                 var factory = new ConnectionFactory { Uri = new Uri(rabbitMqConnectionString) };
-                return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+                // Task.Run evita el deadlock del contexto de sincronización al llamar
+                // código async desde el registro síncrono de DI.
+                return Task.Run(() => factory.CreateConnectionAsync()).GetAwaiter().GetResult();
             });
             services.AddSingleton<INotificationClient, RabbitMqNotificationClient>();
         }

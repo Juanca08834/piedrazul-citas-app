@@ -90,7 +90,7 @@ public sealed class AdministrationService(IProviderRepository providerRepository
         var codeBase = string.Concat(PatientInputValidator.Normalize(request.FirstName).Take(3)).ToUpperInvariant();
         var provider = new Provider
         {
-            Code = $"{codeBase}{DateTime.UtcNow:HHmmss}",
+            Code = $"{codeBase}{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
             FirstName = PatientInputValidator.Normalize(request.FirstName),
             LastName = PatientInputValidator.Normalize(request.LastName),
             Specialty = PatientInputValidator.Normalize(request.Specialty),
