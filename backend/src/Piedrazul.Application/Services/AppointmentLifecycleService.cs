@@ -19,6 +19,14 @@ public sealed class AppointmentLifecycleService(
     private readonly IAuditLogger _audit = auditLogger;
     private readonly INotificationClient _notifications = notificationClient;
 
+    // Las citas se almacenan en hora Colombia (UTC-5). Siempre comparar con UtcNow
+    // convirtiendo la hora local de la cita a UTC antes de la comparación.
+    private static readonly TimeZoneInfo ColombiaZone =
+        TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
+
+    private static DateTime ToAppointmentUtc(DateOnly date, TimeOnly time) =>
+        TimeZoneInfo.ConvertTimeToUtc(date.ToDateTime(time), ColombiaZone);
+
     public async Task<OperationResult<AppointmentResponse>> CancelPatientAppointmentAsync(Guid appointmentId, string externalUserId, CancellationToken cancellationToken = default)
     {
         var appointment = await _appointments.GetAppointmentByIdAsync(appointmentId, cancellationToken);
@@ -31,8 +39,7 @@ public sealed class AppointmentLifecycleService(
         if (appointment.Status != AppointmentStatus.Scheduled)
             return OperationResult<AppointmentResponse>.Validation("Solo puedes cancelar citas que sigan programadas.");
 
-        var appointmentStart = appointment.AppointmentDate.ToDateTime(appointment.StartTime);
-        if (DateTime.Now >= appointmentStart)
+        if (DateTime.UtcNow >= ToAppointmentUtc(appointment.AppointmentDate, appointment.StartTime))
             return OperationResult<AppointmentResponse>.Validation("Solo puedes cancelar citas antes de la hora de atención.");
 
         appointment.Status = AppointmentStatus.Cancelled;
@@ -108,7 +115,7 @@ public sealed class AppointmentLifecycleService(
         {
             await _appointments.SaveChangesAsync(cancellationToken);
         }
-        catch
+        catch (UniqueConstraintException)
         {
             return OperationResult<AppointmentResponse>.Conflict("La franja seleccionada ya fue tomada por otro usuario. Por favor elige otra hora.");
         }
@@ -139,8 +146,7 @@ public sealed class AppointmentLifecycleService(
         if (!TryParseStatus(status, out var parsedStatus))
             return OperationResult<AppointmentResponse>.Validation("El estado enviado no es válido.");
 
-        var appointmentStart = appointment.AppointmentDate.ToDateTime(appointment.StartTime);
-        if (parsedStatus != AppointmentStatus.Cancelled && DateTime.Now < appointmentStart)
+        if (parsedStatus != AppointmentStatus.Cancelled && DateTime.UtcNow < ToAppointmentUtc(appointment.AppointmentDate, appointment.StartTime))
             return OperationResult<AppointmentResponse>.Validation("Solo puedes marcar como completada o no asistió desde la hora de la cita en adelante.");
 
         if (appointment.Status != AppointmentStatus.Scheduled)

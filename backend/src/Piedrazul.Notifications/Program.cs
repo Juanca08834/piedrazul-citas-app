@@ -13,7 +13,7 @@ if (!string.IsNullOrWhiteSpace(rabbitMqConnectionString))
     builder.Services.AddSingleton<IConnection>(_ =>
     {
         var factory = new ConnectionFactory { Uri = new Uri(rabbitMqConnectionString) };
-        return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+        return Task.Run(() => factory.CreateConnectionAsync()).GetAwaiter().GetResult();
     });
     builder.Services.AddHostedService<AppointmentNotificationConsumer>();
 }

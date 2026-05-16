@@ -44,6 +44,7 @@ public sealed class AdminController(
         return result.Succeeded && result.Data is not null ? Ok(result.Data) : FromFailure(result);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("provider-schedules/{providerId:guid}")]
     public async Task<ActionResult<ProviderScheduleResponse>> UpdateProviderSchedule(Guid providerId, [FromBody] ProviderScheduleRequest request, CancellationToken cancellationToken)
     {
