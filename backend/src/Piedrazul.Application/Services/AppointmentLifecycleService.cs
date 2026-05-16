@@ -115,7 +115,7 @@ public sealed class AppointmentLifecycleService(
         {
             await _appointments.SaveChangesAsync(cancellationToken);
         }
-        catch
+        catch (UniqueConstraintException)
         {
             return OperationResult<AppointmentResponse>.Conflict("La franja seleccionada ya fue tomada por otro usuario. Por favor elige otra hora.");
         }
