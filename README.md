@@ -313,6 +313,18 @@ Los pacientes pueden registrarse desde la pantalla de Keycloak porque el realm t
 
 ---
 
+# Iteracion 2 - Ajustes y validacion
+
+- Se incluye la matriz de pruebas en docs/MRP_Piedrazul_v1.xlsx.
+- Reserva en slot ocupado ahora responde 409 (conflicto) en lugar de 400.
+- Errores de validacion por ModelState responden 422 con { errors: [...] }.
+- Cancelar una cita ajena responde 404 para no filtrar existencia.
+- Exportacion PDF/CSV/XLSX sin citas responde 404 (contenido vacio en servicio).
+- Proveedores inactivos no se listan en administracion.
+- Se agregan pruebas de regresion para los casos ENA.
+
+---
+
 # 7) Pruebas del frontend
 
 Para compilar el frontend en producción:
