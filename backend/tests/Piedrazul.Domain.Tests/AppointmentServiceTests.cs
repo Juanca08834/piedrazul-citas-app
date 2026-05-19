@@ -19,6 +19,7 @@ public sealed class AppointmentServiceTests
     {
         public Provider? ProviderToReturn { get; set; }
         public Appointment? AppointmentToReturn { get; set; }
+        public IReadOnlyList<Appointment> AppointmentsByProviderAndDate { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<WeeklyAvailability> Availabilities { get; set; } = Array.Empty<WeeklyAvailability>();
         public IReadOnlyList<TimeOnly> BookedTimes { get; set; } = Array.Empty<TimeOnly>();
 
@@ -36,7 +37,7 @@ public sealed class AppointmentServiceTests
             Task.FromResult(BookedTimes);
 
         public Task<IReadOnlyList<Appointment>> GetAppointmentsByProviderAndDateAsync(Guid id, DateOnly date, CancellationToken ct = default) =>
-            Task.FromResult<IReadOnlyList<Appointment>>(Array.Empty<Appointment>());
+            Task.FromResult(AppointmentsByProviderAndDate);
 
         public Task<Appointment?> GetAppointmentByIdAsync(Guid id, CancellationToken ct = default) =>
             Task.FromResult(AppointmentToReturn);
@@ -134,33 +135,40 @@ public sealed class AppointmentServiceTests
     }
 
     /// <summary>
-    /// Fake IAvailabilityService que devuelve un slot disponible a las 09:00.
+    /// Fake IAvailabilityService configurable para devolver slots disponibles o no.
     /// Usado por AppointmentBookingService y AppointmentLifecycleService en tests.
     /// </summary>
     private sealed class FakeAvailabilityService : IAvailabilityService
     {
+        private readonly IReadOnlyList<AvailabilitySlotResponse> _slots;
+
+        public FakeAvailabilityService(IReadOnlyList<AvailabilitySlotResponse>? slots = null)
+        {
+            _slots = slots ?? new List<AvailabilitySlotResponse>
+            {
+                new("09:00", "09:30", Available: true)
+            };
+        }
+
         public Task<IReadOnlyList<ProviderSummaryResponse>> GetActiveProvidersAsync(CancellationToken ct = default) =>
             Task.FromResult<IReadOnlyList<ProviderSummaryResponse>>(Array.Empty<ProviderSummaryResponse>());
 
         public Task<OperationResult<IReadOnlyList<AvailabilitySlotResponse>>> GetAvailabilityAsync(Guid providerId, DateOnly date, CancellationToken ct = default) =>
-            Task.FromResult(OperationResult<IReadOnlyList<AvailabilitySlotResponse>>.Success(
-                (IReadOnlyList<AvailabilitySlotResponse>)new List<AvailabilitySlotResponse>
-                {
-                    new("09:00", "09:30", Available: true)
-                }));
+            Task.FromResult(OperationResult<IReadOnlyList<AvailabilitySlotResponse>>.Success(_slots));
     }
 
     // ── Factory helpers ───────────────────────────────────────────────────────
 
     private static AppointmentBookingService BuildBookingService(
         FakeAppointmentRepo? appointmentRepo = null,
-        FakePatientRepo? patientRepo = null)
+        FakePatientRepo? patientRepo = null,
+        IAvailabilityService? availabilityService = null)
     {
         return new AppointmentBookingService(
             appointmentRepo ?? new FakeAppointmentRepo(),
             patientRepo ?? new FakePatientRepo(),
             new FakeSettingsRepo(),
-            new FakeAvailabilityService(),
+            availabilityService ?? new FakeAvailabilityService(),
             new PassThroughCache(),
             new NoOpAuditLogger(),
             new NoOpNotifications());
@@ -185,12 +193,13 @@ public sealed class AppointmentServiceTests
     }
 
     private static AppointmentLifecycleService BuildLifecycleService(
-        FakeAppointmentRepo? appointmentRepo = null)
+        FakeAppointmentRepo? appointmentRepo = null,
+        IAvailabilityService? availabilityService = null)
     {
         return new AppointmentLifecycleService(
             appointmentRepo ?? new FakeAppointmentRepo(),
             new FakeSettingsRepo(),
-            new FakeAvailabilityService(),
+            availabilityService ?? new FakeAvailabilityService(),
             new PassThroughCache(),
             new NoOpAuditLogger(),
             new NoOpNotifications());
@@ -340,6 +349,33 @@ public sealed class AppointmentServiceTests
         Assert.Equal(OperationStatus.NotFound, result.Status);
     }
 
+    [Fact]
+    public async Task CreatePublicAppointment_ShouldReturnConflict_WhenSlotIsNotAvailable()
+    {
+        var provider = new Provider { FirstName = "Dr", LastName = "Test", Specialty = "General" };
+        var fakeRepo = new FakeAppointmentRepo { ProviderToReturn = provider };
+        var availability = new FakeAvailabilityService(new List<AvailabilitySlotResponse>
+        {
+            new("09:00", "09:30", Available: false)
+        });
+        var service = BuildBookingService(appointmentRepo: fakeRepo, availabilityService: availability);
+        var request = new PublicAppointmentRequest
+        {
+            ProviderId = provider.Id,
+            AppointmentDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+            StartTime = "09:00",
+            DocumentNumber = "12345678",
+            FirstName = "Ana",
+            LastName = "Gomez",
+            Phone = "3001234567"
+        };
+
+        var result = await service.CreatePublicAppointmentAsync(request, null, "test");
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(OperationStatus.Conflict, result.Status);
+    }
+
     // ── CreateInternalAppointment – validaciones ──────────────────────────────
 
     [Fact]
@@ -454,7 +490,7 @@ public sealed class AppointmentServiceTests
     }
 
     [Fact]
-    public async Task CancelPatientAppointment_ShouldReturnConflict_WhenUserIsNotOwner()
+    public async Task CancelPatientAppointment_ShouldReturnNotFound_WhenUserIsNotOwner()
     {
         var appointment = new Appointment
         {
@@ -470,7 +506,7 @@ public sealed class AppointmentServiceTests
         var result = await service.CancelPatientAppointmentAsync(appointment.Id, "otro-usuario");
 
         Assert.False(result.Succeeded);
-        Assert.Equal(OperationStatus.Conflict, result.Status);
+        Assert.Equal(OperationStatus.NotFound, result.Status);
     }
 
     [Fact]
@@ -496,7 +532,7 @@ public sealed class AppointmentServiceTests
     // ── ExportAppointmentsCsv – formato ──────────────────────────────────────
 
     [Fact]
-    public async Task ExportCsv_ShouldContainRequiredHeaders_WhenProviderHasNoAppointments()
+    public async Task ExportCsv_ShouldReturnEmptyBytes_WhenProviderHasNoAppointments()
     {
         var provider = new Provider
         {
@@ -504,6 +540,44 @@ public sealed class AppointmentServiceTests
             Specialty = "Fisioterapia", DefaultSlotIntervalMinutes = 30
         };
         var fakeRepo = new FakeAppointmentRepo { ProviderToReturn = provider };
+        var service = BuildQueryService(appointmentRepo: fakeRepo);
+
+        var bytes = await service.ExportAppointmentsCsvAsync(provider.Id, DateOnly.FromDateTime(DateTime.Today));
+        Assert.Empty(bytes);
+    }
+
+    [Fact]
+    public async Task ExportCsv_ShouldContainRequiredHeaders_WhenProviderHasAppointments()
+    {
+        var provider = new Provider
+        {
+            FirstName = "Ana", LastName = "Gomez",
+            Specialty = "Fisioterapia", DefaultSlotIntervalMinutes = 30
+        };
+        var patient = new PatientProfile
+        {
+            DocumentNumber = "12345678",
+            FirstName = "Laura",
+            LastName = "Diaz",
+            Phone = "3001234567",
+            Gender = Gender.Female
+        };
+        var appointment = new Appointment
+        {
+            Provider = provider,
+            PatientProfile = patient,
+            AppointmentDate = DateOnly.FromDateTime(DateTime.Today),
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(9, 30),
+            Status = AppointmentStatus.Scheduled,
+            Channel = AppointmentChannel.Web,
+            CreatedBy = "test"
+        };
+        var fakeRepo = new FakeAppointmentRepo
+        {
+            ProviderToReturn = provider,
+            AppointmentsByProviderAndDate = new[] { appointment }
+        };
         var service = BuildQueryService(appointmentRepo: fakeRepo);
 
         var bytes = await service.ExportAppointmentsCsvAsync(provider.Id, DateOnly.FromDateTime(DateTime.Today));
@@ -515,6 +589,31 @@ public sealed class AppointmentServiceTests
         Assert.Contains("Canal", csv);
         Assert.Contains("Estado", csv);
         Assert.Contains("Observaciones", csv);
+        Assert.Contains("Laura Diaz", csv);
+    }
+
+    [Fact]
+    public async Task ExportPdf_ShouldReturnEmptyBytes_WhenProviderHasNoAppointments()
+    {
+        var provider = new Provider { FirstName = "Ana", LastName = "Gomez", Specialty = "Fisioterapia" };
+        var fakeRepo = new FakeAppointmentRepo { ProviderToReturn = provider };
+        var service = BuildQueryService(appointmentRepo: fakeRepo);
+
+        var bytes = await service.ExportAppointmentsPdfAsync(provider.Id, DateOnly.FromDateTime(DateTime.Today));
+
+        Assert.Empty(bytes);
+    }
+
+    [Fact]
+    public async Task ExportXlsx_ShouldReturnEmptyBytes_WhenProviderHasNoAppointments()
+    {
+        var provider = new Provider { FirstName = "Ana", LastName = "Gomez", Specialty = "Fisioterapia" };
+        var fakeRepo = new FakeAppointmentRepo { ProviderToReturn = provider };
+        var service = BuildQueryService(appointmentRepo: fakeRepo);
+
+        var bytes = await service.ExportAppointmentsXlsxAsync(provider.Id, DateOnly.FromDateTime(DateTime.Today));
+
+        Assert.Empty(bytes);
     }
 
     [Fact]

@@ -12,6 +12,7 @@ public sealed class ProviderRepository(AppDbContext dbContext) : IProviderReposi
     {
         return await _dbContext.Providers
             .AsNoTracking()
+            .Where(x => x.IsActive)
             .Include(x => x.WeeklyAvailabilities)
             .OrderBy(x => x.Specialty)
             .ThenBy(x => x.FirstName)

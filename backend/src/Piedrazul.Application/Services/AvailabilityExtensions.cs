@@ -21,7 +21,7 @@ internal static class AvailabilityExtensions
             return OperationResult<TimeSlot>.Validation("La franja seleccionada no corresponde al horario configurado para este profesional.");
 
         if (!slot.Available)
-            return OperationResult<TimeSlot>.Validation("La franja seleccionada ya no está disponible.");
+            return OperationResult<TimeSlot>.Conflict("La franja seleccionada ya no está disponible.");
 
         return OperationResult<TimeSlot>.Success(new TimeSlot(TimeOnly.Parse(slot.StartTime), TimeOnly.Parse(slot.EndTime)));
     }

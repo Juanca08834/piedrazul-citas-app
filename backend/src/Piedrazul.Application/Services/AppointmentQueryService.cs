@@ -58,6 +58,12 @@ public sealed class AppointmentQueryService(
         if (!appointmentsResult.Succeeded || appointmentsResult.Data is null)
             return Array.Empty<byte>();
 
+        if (appointmentsResult.Data.Items.Count == 0)
+            return Array.Empty<byte>();
+
+        if (appointmentsResult.Data.Items.Count == 0)
+            return Array.Empty<byte>();
+
         return _pdfExporter.Export(
             "Piedrazul - Centro Médico",
             appointmentsResult.Data.ProviderName,
@@ -70,6 +76,12 @@ public sealed class AppointmentQueryService(
     {
         var appointmentsResult = await GetAppointmentsByProviderAndDateAsync(providerId, date, cancellationToken);
         if (!appointmentsResult.Succeeded || appointmentsResult.Data is null)
+            return Array.Empty<byte>();
+
+        if (appointmentsResult.Data.Items.Count == 0)
+            return Array.Empty<byte>();
+
+        if (appointmentsResult.Data.Items.Count == 0)
             return Array.Empty<byte>();
 
         var builder = new StringBuilder();
@@ -98,6 +110,12 @@ public sealed class AppointmentQueryService(
     {
         var appointmentsResult = await GetAppointmentsByProviderAndDateAsync(providerId, date, cancellationToken);
         if (!appointmentsResult.Succeeded || appointmentsResult.Data is null)
+            return Array.Empty<byte>();
+
+        if (appointmentsResult.Data.Items.Count == 0)
+            return Array.Empty<byte>();
+
+        if (appointmentsResult.Data.Items.Count == 0)
             return Array.Empty<byte>();
 
         return _excelExporter.Export(

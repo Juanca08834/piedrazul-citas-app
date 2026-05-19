@@ -72,7 +72,15 @@ public sealed class AppointmentBookingService(
 
         var slotResult = await _availability.ResolveSlotAsync(providerId, appointmentDate, startTime, cancellationToken);
         if (!slotResult.Succeeded || slotResult.Data is null)
-            return OperationResult<AppointmentResponse>.Validation(slotResult.Errors.ToArray());
+        {
+            return slotResult.Status switch
+            {
+                OperationStatus.NotFound        => OperationResult<AppointmentResponse>.NotFound(slotResult.Errors.ToArray()),
+                OperationStatus.Conflict        => OperationResult<AppointmentResponse>.Conflict(slotResult.Errors.ToArray()),
+                OperationStatus.ValidationError => OperationResult<AppointmentResponse>.Validation(slotResult.Errors.ToArray()),
+                _                               => OperationResult<AppointmentResponse>.Validation(slotResult.Errors.ToArray())
+            };
+        }
 
         var normalizedDocument  = PatientInputValidator.Normalize(documentNumber);
         var normalizedFirstName = PatientInputValidator.Normalize(firstName);

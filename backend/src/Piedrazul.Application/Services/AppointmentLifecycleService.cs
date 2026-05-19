@@ -34,7 +34,7 @@ public sealed class AppointmentLifecycleService(
             return OperationResult<AppointmentResponse>.NotFound("No se encontró la cita seleccionada.");
 
         if (!string.Equals(appointment.PatientProfile?.ExternalUserId, externalUserId, StringComparison.Ordinal))
-            return OperationResult<AppointmentResponse>.Conflict("No tienes permisos para cancelar esta cita.");
+            return OperationResult<AppointmentResponse>.NotFound("No se encontró la cita seleccionada.");
 
         if (appointment.Status != AppointmentStatus.Scheduled)
             return OperationResult<AppointmentResponse>.Validation("Solo puedes cancelar citas que sigan programadas.");
@@ -80,7 +80,15 @@ public sealed class AppointmentLifecycleService(
 
         var slotResult = await _availability.ResolveSlotAsync(appointment.ProviderId, request.NewDate, request.NewStartTime, cancellationToken);
         if (!slotResult.Succeeded || slotResult.Data is null)
-            return OperationResult<AppointmentResponse>.Validation(slotResult.Errors.ToArray());
+        {
+            return slotResult.Status switch
+            {
+                OperationStatus.NotFound        => OperationResult<AppointmentResponse>.NotFound(slotResult.Errors.ToArray()),
+                OperationStatus.Conflict        => OperationResult<AppointmentResponse>.Conflict(slotResult.Errors.ToArray()),
+                OperationStatus.ValidationError => OperationResult<AppointmentResponse>.Validation(slotResult.Errors.ToArray()),
+                _                               => OperationResult<AppointmentResponse>.Validation(slotResult.Errors.ToArray())
+            };
+        }
 
         var normalizedReason = PatientInputValidator.Normalize(request.Reason);
         if (!string.IsNullOrWhiteSpace(normalizedReason) && normalizedReason.Length > 500)
